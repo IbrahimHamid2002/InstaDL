@@ -9,6 +9,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig = {
+    reactStrictMode: true,
     // Add any other Next.js config here
 };
 

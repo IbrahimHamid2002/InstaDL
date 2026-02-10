@@ -47,17 +47,11 @@ A premium, glassmorphic Progressive Web Application (PWA) built with Next.js 14,
 
 ## Deployment
 
-This app uses `next-pwa` which requires some build configuration.
+This app uses `next-pwa` and is optimized for Vercel.
 
-1.  Build the application:
-    ```bash
-    npm run build
-    ```
-
-2.  Start the production server:
-    ```bash
-    npm start
-    ```
+1.  **Read the Guide**: [DEPLOY.md](./DEPLOY.md) contains step-by-step instructions.
+2.  **Environment Variables**: You MUST set `RAPIDAPI_KEY` and `RAPIDAPI_HOST` in your Vercel project settings.
+3.  **Build**: Vercel will automatically use the `npm run build` script defined in `package.json`.
 
 ## Technologies Used
 
