@@ -74,6 +74,7 @@ export async function POST(request: Request) {
         // Specific parsing for the "Instagram Downloader & Stories" API (stories5 host) based on user logs
         let downloadUrl = data.video_url;
         let type: "image" | "video" | "carousel" = "image";
+        let carouselItems: { type: "image" | "video"; url: string; thumbnail?: string }[] = [];
 
         if (data.is_video) {
             type = "video";
@@ -83,16 +84,28 @@ export async function POST(request: Request) {
             downloadUrl = data.src || data.display_url || data.image_url;
         }
 
-        // Fallback checks
-        if (!downloadUrl && data.media && Array.isArray(data.media)) {
-            // Sometimes media is an array of items (carousel or single)
-            const item = data.media[0];
-            if (item.is_video) {
-                type = "video";
-                downloadUrl = item.video_url;
+        // Fallback checks and Carousel support
+        if (data.media && Array.isArray(data.media) && data.media.length > 0) {
+            if (data.media.length > 1) {
+                type = "carousel";
+                carouselItems = data.media.map((item: any) => ({
+                    type: item.is_video ? "video" : "image",
+                    url: item.video_url || item.src || item.display_url || item.url,
+                    thumbnail: item.thumbnail_src || item.thumb || item.thumbnail || null
+                })).filter((item: any) => item.url);
+                
+                if (carouselItems.length > 0 && !downloadUrl) {
+                    downloadUrl = carouselItems[0].url; // fallback to first item
+                }
             } else {
-                type = "image";
-                downloadUrl = item.src || item.display_url;
+                const item = data.media[0];
+                if (item.is_video) {
+                    type = "video";
+                    downloadUrl = item.video_url;
+                } else {
+                    type = "image";
+                    downloadUrl = item.src || item.display_url || item.url;
+                }
             }
         }
 
@@ -101,13 +114,14 @@ export async function POST(request: Request) {
             downloadUrl = data.url || data.media; // older fallbacks
         }
 
-        if (!downloadUrl) {
+        if (!downloadUrl && carouselItems.length === 0) {
             return NextResponse.json({ error: "Media not found or API format changed" }, { status: 404 });
         }
 
         return NextResponse.json({
             type,
             url: downloadUrl,
+            carouselItems: carouselItems.length > 0 ? carouselItems : undefined,
             thumbnail: data.thumbnail_src || data.thumb || data.thumbnail || null,
             originalUrl: url,
             caption: data.description || data.title || data.caption || ""
